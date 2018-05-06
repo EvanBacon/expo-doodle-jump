@@ -1,0 +1,15 @@
+{
+  "name": "doodle-jump",
+  "version": "0.0.0",
+  "description": "pixi.js game",
+  "author": null,
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "dependencies": {
+    "expo": "^27.0.0",
+    "react": "16.3.1",
+    "react-native": "https://github.com/expo/react-native/archive/sdk-27.0.0.tar.gz",
+    "expo-asset-utils": "0.0.4-alpha.2",
+    "expo-pixi": "0.2.4"
+  }
+}
