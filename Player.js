@@ -19,24 +19,23 @@ class Player extends Node {
     app: {
       renderer: { width, height },
     },
-    textures,
+    texture,
   }) {
-    super(textures.player);
-    this.textures = textures;
+    super(texture);
     this.screenSize = { width, height };
     this.reset();
   }
 
-  reset = () => {
+  reset() {
+    super.reset();
     const { width, height } = this.screenSize;
     this.anchor.x = 0.5;
-    this.scale.set(Settings.scale);
     this.x = width / 2;
     this.y = height / 2;
-  };
+  }
 
-  update(delta) {
-    super.update(delta);
+  update() {
+    super.update();
 
     this.x += this.velocity.x;
     this.y += this.velocity.y;

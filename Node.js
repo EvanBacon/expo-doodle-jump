@@ -1,4 +1,5 @@
 import { PIXI } from 'expo-pixi';
+import Settings from './constants/Settings';
 
 class Node extends PIXI.Sprite {
   get left() {
@@ -16,6 +17,11 @@ class Node extends PIXI.Sprite {
   constructor(texture) {
     super();
     this.texture = texture;
+    this.scale.set(Settings.scale);
+  }
+
+  reset() {
+    this.scale.set(Settings.scale);
   }
 
   update() {}

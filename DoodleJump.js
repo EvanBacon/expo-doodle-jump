@@ -13,9 +13,9 @@ import BrokenPlatform from './BrokenPlatform';
 import PlatformType from './constants/PlatformType';
 import Assets from './Assets';
 
+const collisionBuffer = 15;
 class DoodleJump {
   position = 0;
-  interacted = false;
   score = 0;
   jumpCount = 0;
   platforms = [];
@@ -30,6 +30,7 @@ class DoodleJump {
 
   constructor(context, onScore) {
     this.app = ExpoPixi.application({ context });
+    this.platformInterval = this.app.renderer.height / Settings.platformCount;
     this.setup();
     this.onScore = onScore;
   }
@@ -38,7 +39,12 @@ class DoodleJump {
     await AssetUtils.cacheAssetsAsync({
       files: AssetUtils.arrayFromObject(Assets),
     });
+    this.setupTextures();
+    this.setupGame();
+    this.app.ticker.add(this.update);
+  };
 
+  setupTextures = () => {
     const _sprite = Asset.fromModule(Assets.sprite);
     let texture = ExpoPixi.texture(_sprite);
 
@@ -51,34 +57,61 @@ class DoodleJump {
     });
 
     this.textures = textures;
-    this.init();
-    this.app.ticker.add(this.update);
   };
 
-  update = delta => {
+  setupGame = () => {
+    const { app, textures } = this;
+
+    const background = new PIXI.extras.TilingSprite(
+      textures.grid,
+      this.width,
+      this.height,
+    );
+    background.tileScale.set(Settings.scale);
+    app.stage.addChild(background);
+
+    this.player = new Player({ app, texture: textures.player });
+    app.stage.addChild(this.player);
+    this.spring = new Spring(textures['spring_00'], textures['spring_01']);
+    app.stage.addChild(this.spring);
+    this.brokenPlatform = new BrokenPlatform(textures.block_broken);
+    app.stage.addChild(this.brokenPlatform);
+
+    this.setupPlatforms();
+  };
+
+  setupPlatforms = () => {
+    const { app, textures, score } = this;
+    for (let i = 0; i < Settings.platformCount; i++) {
+      const platform = new Platform({ app, textures, score });
+      platform.y = this.position;
+      this.position += this.platformInterval;
+      this.platforms.push(platform);
+      app.stage.addChild(platform);
+    }
+  };
+
+  update = () => {
     this.updatePlatforms();
 
     this.updateSprings();
 
     this.updatePlayer();
 
-    this.player.update(delta);
-
     this.onScore(this.score);
   };
 
   updateControls = x => {
     if (this.player) {
-      this.player.velocity.x = x * 20;
+      this.player.velocity.x = x * 25;
     }
   };
 
   updatePlayer = () => {
-    const { player, height, width } = this;
+    const { app, player, height, width, score, textures } = this;
 
-    //Gameover if it hits the bottom
     if (player.y + player.height > height) {
-      this.gameOver();
+      this.reset();
     }
 
     //Movement of player affected by gravity
@@ -96,16 +129,16 @@ class DoodleJump {
 
       this.brokenPlatform.y -= change;
 
-      //When the player reaches half height, move the platforms to create the illusion of scrolling and recreate the platforms that are out of viewport...
+      // When the player reaches half height move everything to make it look like a camera is moving up
       this.platforms.forEach((p, i) => {
         p.y -= delta;
         p.y -= change;
 
         if (p.y > height) {
-          let platform = new Platform({
-            app: this.app,
-            textures: this.textures,
-            score: this.score,
+          const platform = new Platform({
+            app,
+            textures,
+            score,
           });
           this.app.stage.addChild(platform);
           this.platforms[i] = platform;
@@ -125,71 +158,70 @@ class DoodleJump {
       this.score++;
     }
 
-    //Make the player jump when it collides with platforms
-    this.collides();
+    this.checkPlatformCollision();
+    this.checkSpringCollision();
+
+    this.player.update();
   };
 
   updateSprings = () => {
-    const s = this.spring;
-    const p = this.platforms[0];
+    const { spring } = this;
+    const platform = this.platforms[0];
 
-    if (p.type === PlatformType.normal || p.type === PlatformType.moving) {
-      s.x = p.x + p.width / 2 - s.width / 2;
-      s.y = p.y - p.height - 10;
+    if (platform.canHaveSpring) {
+      spring.visible = true;
+      spring.x = platform.x + platform.width / 2 - spring.width / 2;
+      spring.y = platform.y - platform.height - 10;
 
-      if (s.y > this.height / 1.1) {
-        s.interacted = false;
+      if (spring.y > this.height / 1.1) {
+        spring.interacted = false;
       }
     } else {
-      s.x = 0 - s.width;
-      s.y = 0 - s.height;
+      spring.visible = false;
     }
   };
 
   updatePlatforms = () => {
-    let subs = this.brokenPlatform;
+    const { brokenPlatform, platforms } = this;
 
-    this.platforms.forEach(p => {
-      if (p.type === PlatformType.moving) {
-        if (p.left < 0 || p.right > this.width) {
-          p.velocity.x *= -1;
+    platforms.forEach(platform => {
+      if (platform.type === PlatformType.moving) {
+        if (platform.left < 0 || platform.right > this.width) {
+          platform.velocity.x *= -1;
         }
 
-        p.x += p.velocity.x;
+        platform.x += platform.velocity.x;
       }
 
       if (
-        p.interacted === true &&
-        subs.visible === false &&
+        platform.interacted === true &&
+        brokenPlatform.visible === false &&
         this.jumpCount === 0
       ) {
-        subs.x = p.x;
-        subs.y = p.y;
-        subs.visible = true;
-        p.visible = false;
+        brokenPlatform.x = platform.x;
+        brokenPlatform.y = platform.y;
+        brokenPlatform.visible = true;
+        platform.visible = false;
         this.jumpCount++;
       }
     });
 
-    if (subs.visible === true) {
-      subs.update();
-      subs.y += 8;
-    }
+    brokenPlatform.update();
 
-    if (subs.y > this.height) {
-      subs.visible = false;
+    if (brokenPlatform.y > this.height) {
+      brokenPlatform.visible = false;
     }
   };
 
-  collides = () => {
-    const { player, spring, platforms } = this;
+  checkPlatformCollision = () => {
+    const { player, platforms } = this;
     //Platforms
     platforms.forEach(platform => {
       if (
         player.velocity.y > 0 &&
         platform.interacted === false &&
-        player.left + 15 < platform.right &&
-        player.right - 15 > platform.left &&
+        player.left + collisionBuffer < platform.right &&
+        player.right - collisionBuffer > platform.left &&
         player.bottom > platform.top &&
         player.bottom < platform.bottom
       ) {
@@ -214,13 +246,16 @@ class DoodleJump {
         }
       }
     });
+  };
 
+  checkSpringCollision = () => {
+    const { player, spring } = this;
     //Springs
     if (
       player.velocity.y > 0 &&
       spring.interacted === false &&
-      player.left + 15 < spring.right &&
-      player.right - 15 > spring.left &&
+      player.left + collisionBuffer < spring.right &&
+      player.right - collisionBuffer > spring.left &&
       player.bottom > spring.top &&
       player.bottom < spring.bottom
     ) {
@@ -229,59 +264,12 @@ class DoodleJump {
     }
   };
 
-  gameOver = () => {
-    this.platforms.forEach(p => p.reset());
-
-    if (this.player.top > this.height / 2 && this.interacted === false) {
-      this.player.y -= 8;
-      this.player.velocity.y = 0;
-    } else if (this.player.top < this.height / 2) {
-      this.interacted = true;
-    }
-    this.reset();
-  };
-
-  init = () => {
-    const { app, textures } = this;
-
-    app.renderer.backgroundColor = 0xf5e9de;
-
-    const background = new PIXI.extras.TilingSprite(
-      textures.grid,
-      this.width,
-      this.height,
-    );
-    background.tileScale.set(Settings.scale);
-    app.stage.addChild(background);
-
-    this.player = new Player({ app, textures });
-    app.stage.addChild(this.player);
-    this.spring = new Spring({ textures });
-    app.stage.addChild(this.spring);
-    this.brokenPlatform = new BrokenPlatform({
-      texture: textures.block_broken,
-    });
-    app.stage.addChild(this.brokenPlatform);
-
-    this.setupPlatforms();
-  };
-
-  setupPlatforms = () => {
-    const { app, textures } = this;
-    for (let i = 0; i < Settings.platformCount; i++) {
-      const platform = new Platform({ app, textures });
-      platform.y = this.position;
-      this.position += app.renderer.height / Settings.platformCount;
-      this.platforms.push(platform);
-      app.stage.addChild(platform);
-    }
-  };
-
   reset = () => {
-    this.platforms.forEach(p => this.app.stage.removeChild(p));
+    this.platforms.forEach(platform => {
+      platform.reset();
+      this.app.stage.removeChild(platform);
+    });
     this.platforms = [];
-
-    this.interacted = false;
     this.position = 0;
     this.score = 0;
     this.player.reset();

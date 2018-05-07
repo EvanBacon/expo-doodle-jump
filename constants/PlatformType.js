@@ -1,6 +1,6 @@
 export default {
-  normal: 'platform_green',
-  moving: 'platform_blue',
-  breakable: 'platform_red',
-  vanishable: 'platform_white',
+  normal: 'normal',
+  moving: 'moving',
+  breakable: 'breakable',
+  vanishable: 'vanishable',
 };

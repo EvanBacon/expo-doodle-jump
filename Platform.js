@@ -94,10 +94,16 @@ class Platform extends Node {
     }
   }
 
-  reset = () => {
+  reset() {
+    super.reset();
     this.y -= 12;
-  };
+  }
 
+  get canHaveSpring() {
+    return (
+      this.type === PlatformType.normal || this.type === PlatformType.moving
+    );
+  }
   set isBreakable(value) {
     if (value) {
       this.texture = this.textures['block_broken'];

@@ -2,10 +2,10 @@ import Node from './Node';
 import Settings from './constants/Settings';
 
 class Spring extends Node {
-  constructor({ textures }) {
-    super(textures['spring_00']);
-    this.textures = textures;
-    this.scale.set(Settings.scale);
+  constructor(closed, open) {
+    super(closed);
+    this.closed = closed;
+    this.open = open;
   }
 
   get interacted() {
@@ -16,7 +16,7 @@ class Spring extends Node {
       return;
     }
     this._interacted = value;
-    this.texture = this.textures[`spring_0${value ? 1 : 0}`];
+    this.texture = value ? this.open : this.closed;
   }
 }
 
