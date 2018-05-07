@@ -1,18 +1,19 @@
-import ExpoPixi, { PIXI } from 'expo-pixi'; // Version can be specified in package.json
-import AssetUtils from 'expo-asset-utils'; // Version can be specified in package.json
 import { Asset } from 'expo';
+import AssetUtils from 'expo-asset-utils';
+import ExpoPixi, { PIXI } from 'expo-pixi';
 
-import SpriteSheet from './constants/SpriteSheet';
-
+import Assets from '../Assets';
+import PlatformType from '../constants/PlatformType';
+import Settings from '../constants/Settings';
+import SpriteSheet from '../constants/SpriteSheet';
+import BrokenPlatform from './BrokenPlatform';
 import Platform from './Platform';
 import Player from './Player';
 import Spring from './Spring';
-import Settings from './constants/Settings';
-import Direction from './constants/Direction';
-import BrokenPlatform from './BrokenPlatform';
-import PlatformType from './constants/PlatformType';
-import Assets from './Assets';
+import PlatformLevels from '../constants/PlatformLevels';
+import PlatformTint from '../constants/PlatformTint';
 
+let broken = 0;
 const collisionBuffer = 15;
 class DoodleJump {
   position = 0;
@@ -59,6 +60,43 @@ class DoodleJump {
     this.textures = textures;
   };
 
+  getLevel = score => {
+    if (score >= 5000) {
+      return 5;
+    } else if (score >= 2000 && score < 5000) {
+      return 4;
+    } else if (score >= 1000 && score < 2000) {
+      return 3;
+    } else if (score >= 500 && score < 1000) {
+      return 2;
+    } else if (score >= 100 && score < 500) {
+      return 1;
+    } else {
+      return 0;
+    }
+  };
+
+  getPlatformForLevel = score => {
+    const level = this.getLevel(score);
+    const types = PlatformLevels[level].platforms;
+    let type = types[Math.floor(Math.random() * types.length)];
+    if (type === PlatformType.breakable) {
+      if (broken < 1) {
+        broken += 1;
+      } else if (broken >= 1) {
+        type = PlatformType.normal;
+        broken = 0;
+      }
+    }
+
+    const { textures } = this;
+    const platform = new Platform({ type, textures });
+    platform.x =
+      platform.width / 2 + Math.random() * (this.width - platform.width);
+
+    return platform;
+  };
+
   setupGame = () => {
     const { app, textures } = this;
 
@@ -72,9 +110,14 @@ class DoodleJump {
 
     this.player = new Player({ app, texture: textures.player });
     app.stage.addChild(this.player);
-    this.spring = new Spring(textures['spring_00'], textures['spring_01']);
+    this.spring = new Spring(textures.spring_closed, textures.spring_open);
     app.stage.addChild(this.spring);
-    this.brokenPlatform = new BrokenPlatform(textures.block_broken);
+
+    const config = PlatformTint[PlatformType.breakable];
+    this.brokenPlatform = new BrokenPlatform(
+      textures[config.texture],
+      config.tint,
+    );
     app.stage.addChild(this.brokenPlatform);
 
     this.setupPlatforms();
@@ -83,7 +126,7 @@ class DoodleJump {
   setupPlatforms = () => {
     const { app, textures, score } = this;
     for (let i = 0; i < Settings.platformCount; i++) {
-      const platform = new Platform({ app, textures, score });
+      const platform = this.getPlatformForLevel(score);
       platform.y = this.position;
       this.position += this.platformInterval;
       this.platforms.push(platform);
@@ -116,10 +159,7 @@ class DoodleJump {
 
     //Movement of player affected by gravity
     const middle = height / 2 - player.height / 2;
-    if (player.y >= middle) {
-      player.y += player.velocity.y;
-      player.velocity.y += Settings.gravity;
-    } else {
+    if (player.y < middle) {
       const change = (player.y - middle) * 0.1;
 
       let delta = 0;
@@ -135,25 +175,14 @@ class DoodleJump {
         p.y -= change;
 
         if (p.y > height) {
-          const platform = new Platform({
-            app,
-            textures,
-            score,
-          });
+          const platform = this.getPlatformForLevel(score);
+          platform.y = p.y - height;
           this.app.stage.addChild(platform);
           this.platforms[i] = platform;
-          this.platforms[i].y = p.y - height;
         }
       });
 
-      player.velocity.y += Settings.gravity;
-
       player.y -= change;
-
-      if (player.velocity.y >= 0) {
-        player.y += player.velocity.y;
-        player.velocity.y += Settings.gravity;
-      }
 
       this.score++;
     }
@@ -185,12 +214,11 @@ class DoodleJump {
     const { brokenPlatform, platforms } = this;
 
     platforms.forEach(platform => {
+      platform.update();
       if (platform.type === PlatformType.moving) {
         if (platform.left < 0 || platform.right > this.width) {
           platform.velocity.x *= -1;
         }
-
-        platform.x += platform.velocity.x;
       }
 
       if (

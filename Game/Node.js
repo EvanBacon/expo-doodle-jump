@@ -1,7 +1,9 @@
 import { PIXI } from 'expo-pixi';
-import Settings from './constants/Settings';
+
+import Settings from '../constants/Settings';
 
 class Node extends PIXI.Sprite {
+  velocity = { x: 0, y: 0 };
   get left() {
     return this.x;
   }
@@ -24,7 +26,12 @@ class Node extends PIXI.Sprite {
     this.scale.set(Settings.scale);
   }
 
-  update() {}
+  update() {
+    if (this.visible) {
+      this.x += this.velocity.x;
+      this.y += this.velocity.y;
+    }
+  }
 }
 
 export default Node;

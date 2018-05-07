@@ -1,5 +1,4 @@
 import Node from './Node';
-import Settings from './constants/Settings';
 
 class Spring extends Node {
   constructor(closed, open) {

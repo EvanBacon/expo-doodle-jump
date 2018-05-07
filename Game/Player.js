@@ -1,13 +1,7 @@
-import Direction from './constants/Direction';
+import Settings from '../constants/Settings';
 import Node from './Node';
-import Settings from './constants/Settings';
 
 class Player extends Node {
-  velocity = {
-    x: 0,
-    y: 11,
-  };
-
   get left() {
     return this.x - this.width / 2;
   }
@@ -37,9 +31,6 @@ class Player extends Node {
   update() {
     super.update();
 
-    this.x += this.velocity.x;
-    this.y += this.velocity.y;
-
     this.velocity.y += Settings.gravity;
 
     // To avoid jitter
@@ -55,8 +46,8 @@ class Player extends Node {
     }
   }
 
-  jump = () => (this.velocity.y = -10 * (Settings.scale / 2));
+  jump = () => (this.velocity.y = -23 * (Settings.scale / 2));
 
-  jumpHigh = () => (this.velocity.y = -16 * (Settings.scale / 2));
+  jumpHigh = () => (this.velocity.y = -32 * (Settings.scale / 2));
 }
 export default Player;

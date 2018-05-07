@@ -1,7 +1,7 @@
 import { Accelerometer, GLView } from 'expo';
 import React from 'react';
 import { Platform, StyleSheet, Text, View } from 'react-native';
-import DoodleJump from './DoodleJump';
+import DoodleJump from './Game/DoodleJump';
 
 class App extends React.Component {
   state = { score: 0 };

@@ -1,3 +1,3 @@
 export default {
-  sprite: require('./images/spritesheet.png'),
+  sprite: require('./assets/images/spritesheet.png'),
 };
