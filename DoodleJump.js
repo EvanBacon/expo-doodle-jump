@@ -10,7 +10,7 @@ import Spring from './Spring';
 import Floor from './Floor';
 import Settings from './constants/Settings';
 import Direction from './constants/Direction';
-import PlatformBrokenSubstitute from './PlatformBrokenSubstitute';
+import BrokenPlatform from './BrokenPlatform';
 import PlatformType from './constants/PlatformType';
 import Assets from './Assets';
 
@@ -152,7 +152,7 @@ class DoodleJump {
         delta = player.velocity.y;
       }
 
-      this.platformBrokenSubstitute.y -= change;
+      this.brokenPlatform.y -= change;
 
       //When the player reaches half height, move the platforms to create the illusion of scrolling and recreate the platforms that are out of viewport...
       this.platforms.forEach((p, i) => {
@@ -210,7 +210,7 @@ class DoodleJump {
   };
 
   updatePlatforms = () => {
-    let subs = this.platformBrokenSubstitute;
+    let subs = this.brokenPlatform;
 
     this.platforms.forEach(p => {
       if (p.type === PlatformType.moving) {
@@ -320,8 +320,8 @@ class DoodleJump {
     this.spring = new Spring({ textures });
     app.stage.addChild(this.spring);
 
-    this.platformBrokenSubstitute = new PlatformBrokenSubstitute({ textures });
-    app.stage.addChild(this.platformBrokenSubstitute);
+    this.brokenPlatform = new BrokenPlatform({ textures });
+    app.stage.addChild(this.brokenPlatform);
 
     this.setupPlatforms();
   };

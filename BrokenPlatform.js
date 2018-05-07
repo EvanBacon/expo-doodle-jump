@@ -2,7 +2,7 @@ import Node from './Node';
 import Settings from './constants/Settings';
 import PlatformType from './constants/PlatformType';
 
-class PlatformBrokenSubstitute extends Node {
+class BrokenPlatform extends Node {
   constructor({ textures }) {
     super(textures[PlatformType.breakable]);
     this.height = 17 * Settings.scale;
@@ -17,4 +17,4 @@ class PlatformBrokenSubstitute extends Node {
   };
 }
 
-export default PlatformBrokenSubstitute;
+export default BrokenPlatform;
