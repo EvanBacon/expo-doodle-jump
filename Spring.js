@@ -5,8 +5,7 @@ class Spring extends Node {
   constructor({ textures }) {
     super(textures['spring_00']);
     this.textures = textures;
-    this.width = 26 * Settings.scale;
-    this.height = 30 * Settings.scale;
+    this.scale.set(Settings.scale);
   }
 
   get interacted() {

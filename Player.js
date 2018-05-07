@@ -2,24 +2,17 @@ import Direction from './constants/Direction';
 import Node from './Node';
 import Settings from './constants/Settings';
 
-const spriteMap = {
-  [Direction.left]: 'player_00',
-  [Direction.right]: 'player_01',
-  [Direction.leftLand]: 'player_02',
-  [Direction.rightLand]: 'player_03',
-};
-
 class Player extends Node {
   velocity = {
     x: 0,
     y: 11,
   };
-  isDead = false;
 
-  set dir(value) {
-    if (this._dir === value) return;
-    this._dir = value;
-    this.texture = this.textures[value];
+  get left() {
+    return this.x - this.width / 2;
+  }
+  get right() {
+    return this.x + this.width / 2;
   }
 
   constructor({
@@ -28,7 +21,7 @@ class Player extends Node {
     },
     textures,
   }) {
-    super(textures[spriteMap[Direction.left]]);
+    super(textures.player);
     this.textures = textures;
     this.screenSize = { width, height };
     this.reset();
@@ -36,8 +29,8 @@ class Player extends Node {
 
   reset = () => {
     const { width, height } = this.screenSize;
-    this.width = 55 * Settings.scale;
-    this.height = 40 * Settings.scale;
+    this.anchor.x = 0.5;
+    this.scale.set(Settings.scale);
     this.x = width / 2;
     this.y = height / 2;
   };
@@ -45,26 +38,20 @@ class Player extends Node {
   update(delta) {
     super.update(delta);
 
+    this.x += this.velocity.x;
     this.y += this.velocity.y;
+
     this.velocity.y += Settings.gravity;
 
-    if (
-      this.velocity.y > 0 &&
-      this.left + 15 < 260 &&
-      this.right - 15 > 155 &&
-      this.bottom > 475 &&
-      this.bottom < 500
-    ) {
-      this.jump();
+    // To avoid jitter
+    if (Math.abs(this.velocity.x) > 1) {
+      this.scale.x = this.velocity.x < 0 ? -Settings.scale : Settings.scale;
     }
-    //Accelerations produces when the user hold the keys
-
-    this.x += this.velocity.x;
 
     //Make the player move through walls
-    if (this.x > this.screenSize.width) {
-      this.x = 0 - this.width;
-    } else if (this.x < 0 - this.width) {
+    if (this.left > this.screenSize.width) {
+      this.x = this.width * -0.5;
+    } else if (this.right < 0) {
       this.x = this.screenSize.width;
     }
   }

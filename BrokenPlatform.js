@@ -1,12 +1,14 @@
 import Node from './Node';
 import Settings from './constants/Settings';
 import PlatformType from './constants/PlatformType';
+import Colors from './constants/Colors';
+import PlatformTint from './constants/PlatformTint';
 
 class BrokenPlatform extends Node {
-  constructor({ textures }) {
-    super(textures[PlatformType.breakable]);
-    this.height = 17 * Settings.scale;
-    this.width = 70 * Settings.scale;
+  constructor({ texture }) {
+    super(texture);
+    this.tint = PlatformTint[PlatformType.breakable];
+    this.scale.set(Settings.scale);
     this.reset();
   }
 
