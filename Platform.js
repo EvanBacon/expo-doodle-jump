@@ -5,10 +5,9 @@ import Settings from './constants/Settings';
 let broken = 0;
 
 class Platform extends Node {
-  state = 0;
-  moved = 0;
-  vx = 1;
-
+  state = false;
+  interacted = false;
+  velocity = { x: 1, y: 0 };
   constructor({ app, textures, score }) {
     super(textures.platform_red);
     this.textures = textures;
@@ -16,11 +15,6 @@ class Platform extends Node {
     this.height = 17 * Settings.scale;
     this.x = this.width / 2 + Math.random() * (app.renderer.width - this.width);
 
-    //Platform types
-    //1: Normal
-    //2: Moving
-    //3: Breakable (Go through)
-    //4: Vanishable
     //Setting the probability of which type of platforms should be shown
     if (score >= 5000) {
       this.types = [

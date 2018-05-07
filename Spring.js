@@ -1,5 +1,6 @@
 import Node from './Node';
 import Settings from './constants/Settings';
+
 class Spring extends Node {
   constructor({ textures }) {
     super(textures['spring_00']);
@@ -8,15 +9,15 @@ class Spring extends Node {
     this.height = 30 * Settings.scale;
   }
 
-  get state() {
-    return this._state;
+  get interacted() {
+    return this._interacted;
   }
-  set state(value) {
-    if (this._state === value) {
+  set interacted(value) {
+    if (this._interacted === value) {
       return;
     }
-    this._state = value;
-    this.texture = this.textures[`spring_0${value}`];
+    this._interacted = value;
+    this.texture = this.textures[`spring_0${value ? 1 : 0}`];
   }
 }
 

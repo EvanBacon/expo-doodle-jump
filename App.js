@@ -1,58 +1,68 @@
+import { Accelerometer, GLView } from 'expo';
 import React from 'react';
-import Expo from 'expo';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 import DoodleJump from './DoodleJump';
-import { View, Text,Platform, TouchableWithoutFeedback} from 'react-native'
 
-// import { MultiTouchView } from 'expo-multi-touch';
+class App extends React.Component {
+  state = { score: 0 };
 
-export default class App extends React.Component {
   componentDidMount() {
-    this._subscribe();
+    this.subscribe();
   }
-  componentWillUnmount() {
-    this._unsubscribe();
-  }
-  state = {score: 0}
 
-  _subscribe = () => {
-    const isAndroid = Platform.OS == "android"
-    Expo.Accelerometer.setUpdateInterval(16);
-    this._subscription = Expo.Accelerometer.addListener(
-      ({ x }) => {
+  componentWillUnmount() {
+    this.unsubscribe();
+  }
+
+  subscribe = () => {
+    const isAndroid = Platform.OS === 'android';
+    Accelerometer.setUpdateInterval(16);
+    this._subscription = Accelerometer.addListener(({ x }) => {
+      if (this.game) {
         if (isAndroid) {
-        this.game && this.game.updateControls(x * -1)  
+          this.game.updateControls(x * -1);
         } else {
-          this.game && this.game.updateControls(x)
+          this.game.updateControls(x);
         }
-        
-        
       }
-    );
+    });
   };
 
-  _unsubscribe = () => {
-    Expo.Accelerometer.removeAllListeners();
+  unsubscribe = () => {
+    Accelerometer.removeAllListeners();
     this._subscription && this._subscription.remove();
     this._subscription = null;
   };
 
-  // shouldComponentUpdate = () => false;
+  onContextCreate = context =>
+    (this.game = new DoodleJump(context, score => this.setState({ score })));
 
   render() {
     return (
-      <TouchableWithoutFeedback onPress={() => this.game.onPress()}>
-      <View style={{flex: 1}}>
-      <Expo.GLView
-        style={{ flex: 1 }}
-        onContextCreate={async context => {
-          this.game = new DoodleJump(context, (score) => {
-            this.setState({score})
-          });
-        }}
-      />
-      <Text style={{position: 'absolute', top: 24, left: 12, fontSize: 36, opacity: 0.7, fontWeight: 'bold', color: 'black'}}>{this.state.score}</Text>
+      <View style={styles.container}>
+        <GLView
+          style={styles.container}
+          onContextCreate={this.onContextCreate}
+        />
+        <Text style={styles.score}>{this.state.score}</Text>
       </View>
-      </TouchableWithoutFeedback>
     );
   }
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  score: {
+    position: 'absolute',
+    top: 24,
+    left: 12,
+    fontSize: 36,
+    opacity: 0.7,
+    fontWeight: 'bold',
+    color: 'black',
+  },
+});
+
+export default App;

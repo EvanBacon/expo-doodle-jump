@@ -10,8 +10,10 @@ const spriteMap = {
 };
 
 class Player extends Node {
-  vy = 11;
-  vx = 0;
+  velocity = {
+    x: 0,
+    y: 11,
+  };
   isDead = false;
 
   set dir(value) {
@@ -20,40 +22,45 @@ class Player extends Node {
     this.texture = this.textures[value];
   }
 
-  constructor({ app: { renderer: { width, height } }, textures }) {
+  constructor({
+    app: {
+      renderer: { width, height },
+    },
+    textures,
+  }) {
     super(textures[spriteMap[Direction.left]]);
     this.textures = textures;
     this.screenSize = { width, height };
-    this.reset()
+    this.reset();
   }
-  
+
   reset = () => {
-    const {width, height } = this.screenSize
+    const { width, height } = this.screenSize;
     this.width = 55 * Settings.scale;
     this.height = 40 * Settings.scale;
     this.x = width / 2;
     this.y = height / 2;
-  }
+  };
 
   update(delta) {
     super.update(delta);
 
-    this.y += this.vy;
-    this.vy += Settings.gravity;
+    this.y += this.velocity.y;
+    this.velocity.y += Settings.gravity;
 
     if (
-      this.vy > 0 &&
-      this.x + 15 < 260 &&
-      this.x + this.width - 15 > 155 &&
-      this.y + this.height > 475 &&
-      this.y + this.height < 500
+      this.velocity.y > 0 &&
+      this.left + 15 < 260 &&
+      this.right - 15 > 155 &&
+      this.bottom > 475 &&
+      this.bottom < 500
     ) {
       this.jump();
     }
     //Accelerations produces when the user hold the keys
-    
-    this.x += this.vx;
-  
+
+    this.x += this.velocity.x;
+
     //Make the player move through walls
     if (this.x > this.screenSize.width) {
       this.x = 0 - this.width;
@@ -62,7 +69,8 @@ class Player extends Node {
     }
   }
 
-  jump = () => (this.vy = -10 * (Settings.scale/2));
-  jumpHigh = () => (this.vy = -16 * (Settings.scale/2) );
+  jump = () => (this.velocity.y = -10 * (Settings.scale / 2));
+
+  jumpHigh = () => (this.velocity.y = -16 * (Settings.scale / 2));
 }
 export default Player;
