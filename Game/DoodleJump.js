@@ -3,9 +3,6 @@ import AssetUtils from 'expo-asset-utils';
 import ExpoPixi, { PIXI } from 'expo-pixi';
 
 import Assets from '../Assets';
-import PlatformLevels from '../constants/PlatformLevels';
-import PlatformStyle from '../constants/PlatformStyle';
-import PlatformType from '../constants/PlatformType';
 import Settings from '../constants/Settings';
 import SpriteSheet from '../constants/SpriteSheet';
 import BrokenPlatform from './BrokenPlatform';
@@ -78,13 +75,13 @@ class DoodleJump {
 
   getPlatformForLevel = score => {
     const level = this.getLevel(score);
-    const types = PlatformLevels[level].platforms;
+    const types = Platform.Levels[level];
     let type = types[Math.floor(Math.random() * types.length)];
-    if (type === PlatformType.breakable) {
+    if (type === Platform.Types.breakable) {
       if (broken < 1) {
         broken += 1;
       } else if (broken >= 1) {
-        type = PlatformType.normal;
+        type = Platform.Types.normal;
         broken = 0;
       }
     }
@@ -113,7 +110,7 @@ class DoodleJump {
     this.spring = new Spring(textures.spring_closed, textures.spring_open);
     app.stage.addChild(this.spring);
 
-    const config = PlatformStyle[PlatformType.breakable];
+    const config = Platform.Styles[Platform.Types.breakable];
     this.brokenPlatform = new BrokenPlatform(
       textures[config.texture],
       config.tint,
@@ -215,7 +212,7 @@ class DoodleJump {
 
     platforms.forEach(platform => {
       platform.update();
-      if (platform.type === PlatformType.moving) {
+      if (platform.type === Platform.Types.moving) {
         if (platform.left < 0 || platform.right > this.width) {
           platform.velocity.x *= -1;
         }
@@ -254,14 +251,14 @@ class DoodleJump {
         player.bottom < platform.bottom
       ) {
         if (
-          platform.type === PlatformType.breakable &&
+          platform.type === Platform.Types.breakable &&
           platform.interacted === false
         ) {
           platform.interacted = true;
           this.jumpCount = 0;
           return;
         } else if (
-          platform.type === PlatformType.vanishable &&
+          platform.type === Platform.Types.vanishable &&
           platform.interacted === false
         ) {
           player.jump();
