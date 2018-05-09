@@ -1,11 +1,8 @@
-import Node from './Node';
+import PhysicsNode from './PhysicsNode';
 
-let broken = 0;
-
-class Platform extends Node {
+class Platform extends PhysicsNode {
   state = false;
   interacted = false;
-  velocity = { x: 0, y: 0 };
 
   constructor({ textures, type }) {
     const { tint, texture } = Platform.Styles[type];

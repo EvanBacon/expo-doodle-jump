@@ -1,6 +1,7 @@
-import Node from './Node';
+import PhysicsNode from './PhysicsNode';
+import Settings from '../constants/Settings';
 
-class BrokenPlatform extends Node {
+class BrokenPlatform extends PhysicsNode {
   constructor(texture, tint) {
     super(texture);
     this.tint = tint;
@@ -11,7 +12,7 @@ class BrokenPlatform extends Node {
     super.reset();
     this.x = 0;
     this.y = 0;
-    this.velocity.y = 8;
+    this.velocity.y = Settings.platformFallingVelocity;
     this.visible = false;
   }
 }

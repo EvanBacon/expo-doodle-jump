@@ -1,7 +1,7 @@
 import Settings from '../constants/Settings';
-import Node from './Node';
+import PhysicsNode from './PhysicsNode';
 
-class Player extends Node {
+class Player extends PhysicsNode {
   get left() {
     return this.x - this.width / 2;
   }
@@ -46,8 +46,9 @@ class Player extends Node {
     }
   }
 
-  jump = () => (this.velocity.y = -23 * (Settings.scale / 2));
+  jump = () => (this.velocity.y = Settings.jumpVelocity * -Settings.scale);
 
-  jumpHigh = () => (this.velocity.y = -32 * (Settings.scale / 2));
+  jumpHigh = () =>
+    (this.velocity.y = Settings.springVelocity * -Settings.scale);
 }
 export default Player;

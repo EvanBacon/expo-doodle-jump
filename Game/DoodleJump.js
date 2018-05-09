@@ -11,7 +11,25 @@ import Player from './Player';
 import Spring from './Spring';
 
 let broken = 0;
-const collisionBuffer = 15;
+const levels = [100, 500, 1000, 2000, 5000];
+
+async function setupSpriteSheet(resource, spriteSheet) {
+  const _sprite = Asset.fromModule(resource);
+  await _sprite.downloadAsync();
+  const texture = ExpoPixi.texture(_sprite);
+
+  let textures = {};
+  for (const sprite of spriteSheet) {
+    const { name, x, y, width, height } = sprite;
+    textures[name] = new PIXI.Texture(
+      texture.baseTexture,
+      new PIXI.Rectangle(x, y, width, height),
+    );
+  }
+
+  return textures;
+}
+
 class DoodleJump {
   position = 0;
   score = 0;
@@ -37,39 +55,16 @@ class DoodleJump {
     await AssetUtils.cacheAssetsAsync({
       files: AssetUtils.arrayFromObject(Assets),
     });
-    this.setupTextures();
+    this.textures = await setupSpriteSheet(Assets.sprite, SpriteSheet);
     this.setupGame();
     this.app.ticker.add(this.update);
   };
 
-  setupTextures = () => {
-    const _sprite = Asset.fromModule(Assets.sprite);
-    let texture = ExpoPixi.texture(_sprite);
-
-    let textures = {};
-    SpriteSheet.forEach(({ name, x, y, width, height }) => {
-      textures[name] = new PIXI.Texture(
-        texture.baseTexture,
-        new PIXI.Rectangle(x, y, width, height),
-      );
-    });
-
-    this.textures = textures;
-  };
-
   getLevel = score => {
-    if (score >= 5000) {
-      return 5;
-    } else if (score >= 2000 && score < 5000) {
-      return 4;
-    } else if (score >= 1000 && score < 2000) {
-      return 3;
-    } else if (score >= 500 && score < 1000) {
-      return 2;
-    } else if (score >= 100 && score < 500) {
-      return 1;
-    } else {
-      return 0;
+    for (const index in levels) {
+      if (score < levels[index]) {
+        return index;
+      }
     }
   };
 
@@ -95,39 +90,49 @@ class DoodleJump {
   };
 
   setupGame = () => {
-    const { app, textures } = this;
+    this.setupBackground();
+    this.setupPlayer();
+    this.setupSpring();
+    this.setupBrokenPlatform();
+    this.setupPlatforms();
+  };
 
+  setupBackground = () => {
     const background = new PIXI.extras.TilingSprite(
-      textures.grid,
+      this.textures.grid,
       this.width,
       this.height,
     );
     background.tileScale.set(Settings.scale);
-    app.stage.addChild(background);
+    this.app.stage.addChild(background);
+  };
 
-    this.player = new Player({ app, texture: textures.player });
-    app.stage.addChild(this.player);
-    this.spring = new Spring(textures.spring_closed, textures.spring_open);
-    app.stage.addChild(this.spring);
+  setupPlayer = () => {
+    this.player = new Player({ app: this.app, texture: this.textures.player });
+    this.app.stage.addChild(this.player);
+  };
 
-    const config = Platform.Styles[Platform.Types.breakable];
-    this.brokenPlatform = new BrokenPlatform(
-      textures[config.texture],
-      config.tint,
+  setupSpring = () => {
+    this.spring = new Spring(
+      this.textures.spring_closed,
+      this.textures.spring_open,
     );
-    app.stage.addChild(this.brokenPlatform);
+    this.app.stage.addChild(this.spring);
+  };
 
-    this.setupPlatforms();
+  setupBrokenPlatform = () => {
+    const { texture, tint } = Platform.Styles[Platform.Types.breakable];
+    this.brokenPlatform = new BrokenPlatform(this.textures[texture], tint);
+    this.app.stage.addChild(this.brokenPlatform);
   };
 
   setupPlatforms = () => {
-    const { app, textures, score } = this;
     for (let i = 0; i < Settings.platformCount; i++) {
-      const platform = this.getPlatformForLevel(score);
+      const platform = this.getPlatformForLevel(this.score);
       platform.y = this.position;
       this.position += this.platformInterval;
       this.platforms.push(platform);
-      app.stage.addChild(platform);
+      this.app.stage.addChild(platform);
     }
   };
 
@@ -137,6 +142,7 @@ class DoodleJump {
     this.updateSprings();
 
     this.updatePlayer();
+    this.updateCollisions();
 
     this.onScore(this.score);
   };
@@ -148,7 +154,7 @@ class DoodleJump {
   };
 
   updatePlayer = () => {
-    const { app, player, height, width, score, textures } = this;
+    const { player, height } = this;
 
     if (player.y + player.height > height) {
       this.reset();
@@ -158,36 +164,38 @@ class DoodleJump {
     const middle = height / 2 - player.height / 2;
     if (player.y < middle) {
       const change = (player.y - middle) * 0.1;
-
-      let delta = 0;
-      if (player.velocity.y < 0) {
-        delta = player.velocity.y;
-      }
+      let delta = player.velocity.y < 0 ? player.velocity.y : 0;
 
       this.brokenPlatform.y -= change;
 
       // When the player reaches half height move everything to make it look like a camera is moving up
-      this.platforms.forEach((p, i) => {
-        p.y -= delta;
-        p.y -= change;
+      for (let index in this.platforms) {
+        const platform = this.platforms[index];
+        platform.y -= delta;
+        platform.y -= change;
 
-        if (p.y > height) {
-          const platform = this.getPlatformForLevel(score);
-          platform.y = p.y - height;
-          this.app.stage.addChild(platform);
-          this.platforms[i] = platform;
+        if (platform.y > height) {
+          const nextPlatform = this.getPlatformForLevel(this.score);
+          nextPlatform.y = platform.y - height;
+          this.app.stage.addChild(nextPlatform);
+          this.platforms[index] = nextPlatform;
         }
-      });
+      }
 
       player.y -= change;
 
       this.score++;
     }
 
+    this.player.update();
+  };
+
+  updateCollisions = () => {
+    if (this.player.velocity.y <= 0) {
+      return;
+    }
     this.checkPlatformCollision();
     this.checkSpringCollision();
-
-    this.player.update();
   };
 
   updateSprings = () => {
@@ -197,7 +205,7 @@ class DoodleJump {
     if (platform.canHaveSpring) {
       spring.visible = true;
       spring.x = platform.x + platform.width / 2 - spring.width / 2;
-      spring.y = platform.y - platform.height - 10;
+      spring.y = platform.y - spring.height;
 
       if (spring.y > this.height / 1.1) {
         spring.interacted = false;
@@ -210,7 +218,7 @@ class DoodleJump {
   updatePlatforms = () => {
     const { brokenPlatform, platforms } = this;
 
-    platforms.forEach(platform => {
+    for (let platform of platforms) {
       platform.update();
       if (platform.type === Platform.Types.moving) {
         if (platform.left < 0 || platform.right > this.width) {
@@ -219,8 +227,8 @@ class DoodleJump {
       }
 
       if (
-        platform.interacted === true &&
-        brokenPlatform.visible === false &&
+        platform.interacted &&
+        !brokenPlatform.visible &&
         this.jumpCount === 0
       ) {
         brokenPlatform.x = platform.x;
@@ -229,7 +237,7 @@ class DoodleJump {
         platform.visible = false;
         this.jumpCount++;
       }
-    });
+    }
 
     brokenPlatform.update();
 
@@ -240,47 +248,36 @@ class DoodleJump {
 
   checkPlatformCollision = () => {
     const { player, platforms } = this;
-    //Platforms
-    platforms.forEach(platform => {
+
+    for (let platform of platforms) {
       if (
-        player.velocity.y > 0 &&
-        platform.interacted === false &&
-        player.left + collisionBuffer < platform.right &&
-        player.right - collisionBuffer > platform.left &&
+        !platform.interacted &&
+        player.left + Settings.collisionBuffer < platform.right &&
+        player.right - Settings.collisionBuffer > platform.left &&
         player.bottom > platform.top &&
         player.bottom < platform.bottom
       ) {
-        if (
-          platform.type === Platform.Types.breakable &&
-          platform.interacted === false
-        ) {
+        if (platform.type === Platform.Types.breakable) {
           platform.interacted = true;
           this.jumpCount = 0;
           return;
-        } else if (
-          platform.type === Platform.Types.vanishable &&
-          platform.interacted === false
-        ) {
-          player.jump();
+        } else if (platform.type === Platform.Types.vanishable) {
           platform.interacted = true;
           platform.visible = false;
-        } else if (platform.interacted === true) {
-          return;
-        } else {
-          player.jump();
         }
+        player.jump();
+        return;
       }
-    });
+    }
   };
 
   checkSpringCollision = () => {
     const { player, spring } = this;
-    //Springs
+
     if (
-      player.velocity.y > 0 &&
-      spring.interacted === false &&
-      player.left + collisionBuffer < spring.right &&
-      player.right - collisionBuffer > spring.left &&
+      !spring.interacted &&
+      player.left + Settings.collisionBuffer < spring.right &&
+      player.right - Settings.collisionBuffer > spring.left &&
       player.bottom > spring.top &&
       player.bottom < spring.bottom
     ) {
@@ -290,16 +287,20 @@ class DoodleJump {
   };
 
   reset = () => {
-    this.platforms.forEach(platform => {
-      platform.reset();
-      this.app.stage.removeChild(platform);
-    });
-    this.platforms = [];
     this.position = 0;
     this.score = 0;
     this.player.reset();
 
+    this.resetPlatforms();
     this.setupPlatforms();
+  };
+
+  resetPlatforms = () => {
+    for (const platform of this.platforms) {
+      platform.reset();
+      this.app.stage.removeChild(platform);
+    }
+    this.platforms = [];
   };
 }
 
