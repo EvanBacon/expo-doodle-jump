@@ -1,8 +1,6 @@
-import PlatformTint from '../constants/PlatformTint';
+import PlatformStyle from '../constants/PlatformStyle';
 import PlatformType from '../constants/PlatformType';
-import Settings from '../constants/Settings';
 import Node from './Node';
-import PlatformLevels from '../constants/PlatformLevels';
 
 let broken = 0;
 
@@ -12,7 +10,7 @@ class Platform extends Node {
   velocity = { x: 0, y: 0 };
 
   constructor({ textures, type }) {
-    const { tint, texture } = PlatformTint[type];
+    const { tint, texture } = PlatformStyle[type];
     super(textures[texture]);
     this.tint = tint;
     this.type = type;

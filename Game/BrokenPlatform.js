@@ -1,6 +1,3 @@
-import PlatformTint from '../constants/PlatformTint';
-import PlatformType from '../constants/PlatformType';
-import Settings from '../constants/Settings';
 import Node from './Node';
 
 class BrokenPlatform extends Node {

@@ -3,6 +3,8 @@ import AssetUtils from 'expo-asset-utils';
 import ExpoPixi, { PIXI } from 'expo-pixi';
 
 import Assets from '../Assets';
+import PlatformLevels from '../constants/PlatformLevels';
+import PlatformStyle from '../constants/PlatformStyle';
 import PlatformType from '../constants/PlatformType';
 import Settings from '../constants/Settings';
 import SpriteSheet from '../constants/SpriteSheet';
@@ -10,8 +12,6 @@ import BrokenPlatform from './BrokenPlatform';
 import Platform from './Platform';
 import Player from './Player';
 import Spring from './Spring';
-import PlatformLevels from '../constants/PlatformLevels';
-import PlatformTint from '../constants/PlatformTint';
 
 let broken = 0;
 const collisionBuffer = 15;
@@ -113,7 +113,7 @@ class DoodleJump {
     this.spring = new Spring(textures.spring_closed, textures.spring_open);
     app.stage.addChild(this.spring);
 
-    const config = PlatformTint[PlatformType.breakable];
+    const config = PlatformStyle[PlatformType.breakable];
     this.brokenPlatform = new BrokenPlatform(
       textures[config.texture],
       config.tint,
