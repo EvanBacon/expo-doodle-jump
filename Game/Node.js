@@ -1,10 +1,13 @@
-import { PIXI } from 'expo-pixi';
+import { Sprite } from 'pixi.js';
+import Settings from '../Settings';
 
-import Settings from '../constants/Settings';
-
-class Node extends PIXI.Sprite {
+class Node extends Sprite {
   get left() {
     return this.x;
+  }
+
+  set centerX(v) {
+    this.x = v - this.width / 2;
   }
 
   get right() {

@@ -4,5 +4,5 @@ export default [
   { name: 'grid', x: 0, y: 20, width: 20, height: 20 },
   { name: 'block_broken', x: 0, y: 41, width: 76, height: 23 },
   { name: 'block', x: 0, y: 130, width: 76, height: 22 },
-  { name: 'player', x: 0, y: 65, width: 63, height: 64 },
+  { name: 'player', x: 0, y: 65, width: 66, height: 64 },
 ];

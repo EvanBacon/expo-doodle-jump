@@ -1,22 +1,31 @@
-import Settings from '../constants/Settings';
+import Settings from '../Settings';
 import PhysicsNode from './PhysicsNode';
 
 class Player extends PhysicsNode {
   get left() {
     return this.x - this.width / 2;
   }
+  set centerX(v) {
+    this.x = v;
+  }
+
   get right() {
     return this.x + this.width / 2;
   }
 
-  constructor({
-    app: {
-      renderer: { width, height },
-    },
-    texture,
-  }) {
+  get screenSize() {
+    if (this.app) {
+      return this.app.renderer;
+    }
+    return { width: 0, height: 0 };
+  }
+
+  constructor({ app, texture }) {
     super(texture);
-    this.screenSize = { width, height };
+    this.app = app;
+    const {
+      renderer: { width, height },
+    } = app;
     this.reset();
   }
 
@@ -24,7 +33,7 @@ class Player extends PhysicsNode {
     super.reset();
     const { width, height } = this.screenSize;
     this.anchor.x = 0.5;
-    this.x = width / 2;
+    this.centerX = width / 2;
     this.y = height / 2;
   }
 
@@ -46,9 +55,15 @@ class Player extends PhysicsNode {
     }
   }
 
-  jump = () => (this.velocity.y = Settings.jumpVelocity * -Settings.scale);
+  jump = () => (this.velocity.y = this.jumpVelocity() * -Settings.scale);
 
-  jumpHigh = () =>
-    (this.velocity.y = Settings.springVelocity * -Settings.scale);
+  jumpVelocity = () => {
+    return 15; // (this.app.renderer.width / Settings.scale) * 0.025;
+  };
+
+  springVelocity = () => {
+    return this.jumpVelocity() * 1.5;
+  };
+  jumpHigh = () => (this.velocity.y = this.springVelocity() * -Settings.scale);
 }
 export default Player;

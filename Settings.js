@@ -6,6 +6,6 @@ export default {
   scale: PixelRatio.get(),
   jumpVelocity: 10,
   springVelocity: 15,
-  platformFallingVelocity: 8,
+  platformFallingVelocity: 16,
   collisionBuffer: 15,
 };

@@ -1,10 +1,12 @@
 import { Asset } from 'expo';
-import AssetUtils from 'expo-asset-utils';
-import ExpoPixi, { PIXI } from 'expo-pixi';
+import { Dimensions, Platform as RNPlatform } from 'react-native';
 
-import Assets from '../Assets';
-import Settings from '../constants/Settings';
-import SpriteSheet from '../constants/SpriteSheet';
+import * as AssetUtils from 'expo-asset-utils';
+// import ExpoPixi, { PIXI } from 'expo-pixi';
+import * as PIXI from 'pixi.js';
+import SpriteSheetImage from '../spritesheet.png';
+import Settings from '../Settings';
+import SpriteSheet from '../SpriteSheet';
 import BrokenPlatform from './BrokenPlatform';
 import Platform from './Platform';
 import Player from './Player';
@@ -13,10 +15,13 @@ import Spring from './Spring';
 let broken = 0;
 const levels = [100, 500, 1000, 2000, 5000];
 
+const KEYBOARD_VELOCITY = 1;
+
 async function setupSpriteSheet(resource, spriteSheet) {
   const _sprite = Asset.fromModule(resource);
   await _sprite.downloadAsync();
-  const texture = ExpoPixi.texture(_sprite);
+  const texture = PIXI.Texture.from(resource);
+  // const texture = PIXI.Texture.from(_sprite);
 
   let textures = {};
   for (const sprite of spriteSheet) {
@@ -45,19 +50,60 @@ class DoodleJump {
   }
 
   constructor(context, onScore) {
-    this.app = ExpoPixi.application({ context });
+    this.app = new PIXI.Application({
+      context,
+      autoResize: false,
+      width: context.drawingBufferWidth / 1,
+      height: context.drawingBufferHeight / 1,
+    });
+
+    // this.app.stage.width = window.innerWidth * 3;
+    // this.app.stage.height = window.innerHeight;
     this.platformInterval = this.app.renderer.height / Settings.platformCount;
     this.setup();
     this.onScore = onScore;
   }
 
+  deallocate = () => {};
+
+  screenScale = 1;
+
+  // Resize function window
+  resize = ({ width, height, scale }) => {
+    // Get the p
+    const parent = this.app.view.parentNode;
+    // Resize the renderer
+    this.app.renderer.resize(width * scale, height * scale);
+
+    // Recalculate
+    this.screenScale = width * 0.00266666667;
+    console.log('SCREEN SCALE ', this.screenScale);
+    // this.app.stage.scale = new PIXI.Point(this.screenScale, this.screenScale);
+    this.platformInterval = this.app.renderer.height / Settings.platformCount;
+
+    this.recalculatePlatforms();
+    // this.app.stage.updateTransform();
+    // for (const child of this.app.stage.children) {
+    //   child.scale = this.screenScale;
+    //   child.updateTransform();
+    // }
+
+    if (RNPlatform.OS === 'web') {
+      this.app.view.style.width = width;
+      this.app.view.style.height = height;
+    }
+    if (this.background) {
+      this.background.width = this.width;
+      this.background.height = this.height;
+    }
+  };
+
   setup = async () => {
-    await AssetUtils.cacheAssetsAsync({
-      files: AssetUtils.arrayFromObject(Assets),
-    });
-    this.textures = await setupSpriteSheet(Assets.sprite, SpriteSheet);
+    await Asset.fromModule(SpriteSheetImage).downloadAsync();
+    this.textures = await setupSpriteSheet(SpriteSheetImage, SpriteSheet);
     this.setupGame();
     this.app.ticker.add(this.update);
+    this.resize(Dimensions.get('window'));
   };
 
   getLevel = score => {
@@ -89,6 +135,18 @@ class DoodleJump {
     return platform;
   };
 
+  onLeft = () => {
+    this.updateControls(KEYBOARD_VELOCITY * -1);
+  };
+
+  onRight = () => {
+    this.updateControls(KEYBOARD_VELOCITY);
+  };
+
+  onKeyUp = () => {
+    this.updateControls(0);
+  };
+
   setupGame = () => {
     this.setupBackground();
     this.setupPlayer();
@@ -105,6 +163,7 @@ class DoodleJump {
     );
     background.tileScale.set(Settings.scale);
     this.app.stage.addChild(background);
+    this.background = background;
   };
 
   setupPlayer = () => {
@@ -129,11 +188,27 @@ class DoodleJump {
   setupPlatforms = () => {
     for (let i = 0; i < Settings.platformCount; i++) {
       const platform = this.getPlatformForLevel(this.score);
+      if (i === Settings.platformCount - 1) {
+        platform.centerX = this.width / 2;
+      }
       platform.y = this.position;
       this.position += this.platformInterval;
       this.platforms.push(platform);
       this.app.stage.addChild(platform);
     }
+  };
+
+  recalculatePlatforms = () => {
+    let lastPlatform;
+    for (const platform of this.platforms) {
+      // const platform = this.getPlatformForLevel(this.score);
+      if (lastPlatform) {
+        platform.y = lastPlatform.y + this.platformInterval;
+      }
+      lastPlatform = platform;
+    }
+    this.position =
+      this.platforms[this.platforms.length - 1].y + this.platformInterval;
   };
 
   update = () => {
@@ -179,6 +254,7 @@ class DoodleJump {
           nextPlatform.y = platform.y - height;
           this.app.stage.addChild(nextPlatform);
           this.platforms[index] = nextPlatform;
+          this.app.stage.removeChild(platform);
         }
       }
 

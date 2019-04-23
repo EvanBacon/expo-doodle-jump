@@ -1,5 +1,5 @@
 import PhysicsNode from './PhysicsNode';
-import Settings from '../constants/Settings';
+import Settings from '../Settings';
 
 class BrokenPlatform extends PhysicsNode {
   constructor(texture, tint) {
