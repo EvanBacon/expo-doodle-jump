@@ -5,7 +5,7 @@ import { Dimensions, Platform, StyleSheet, Text, View } from 'react-native';
 import DoodleJump from './Game/DoodleJump';
 import KeyboardControlsView from './KeyboardControlsView';
 import DisableBodyScrollingView from './DisableBodyScrollingView';
-
+import ExpoButton from './ExpoButton';
 const Sensor = Accelerometer;
 class App extends React.Component {
   state = { score: 0, controls: true, size: Dimensions.get('window') };
@@ -101,6 +101,7 @@ class App extends React.Component {
             <Text style={styles.score}>{this.state.score}</Text>
           </KeyboardControlsView>
         </DisableBodyScrollingView>
+        <ExpoButton />
       </View>
     );
   }

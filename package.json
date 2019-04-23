@@ -5,6 +5,9 @@
   "author": null,
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "build": "expo build:web --no-polyfill"
+  },
   "dependencies": {
     "expo": "^33.0.0-alpha.web.0",
     "expo-asset-utils": "^1.1.1",

@@ -77,7 +77,7 @@ class DoodleJump {
 
     // Recalculate
     this.screenScale = width * 0.00266666667;
-    console.log('SCREEN SCALE ', this.screenScale);
+    // console.log('SCREEN SCALE ', this.screenScale);
     // this.app.stage.scale = new PIXI.Point(this.screenScale, this.screenScale);
     this.platformInterval = this.app.renderer.height / Settings.platformCount;
 

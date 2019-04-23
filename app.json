@@ -1,17 +1,19 @@
 {
   "expo": {
-    "name": "doodle-jump",
-    "description": "pixi.js game",
+    "name": "Doodle Jump",
+    "description": "Expo pixi.js game",
     "slug": "doodle-jump",
     "privacy": "unlisted",
     "platforms": ["web", "android", "ios"],
     "sdkVersion": "33.0.0",
     "version": "1.0.0",
     "orientation": "portrait",
-    "primaryColor": "#cccccc",
+    "primaryColor": "#c9c443",
     "icon": "./assets/icons/app-icon.png",
     "splash": {
-      "image": "./assets/icons/loading-icon.png"
+      "image": "./assets/icons/app-icon.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#f7f1e9"
     },
     "packagerOpts": {
       "assetExts": ["ttf", "mp4", "otf", "xml"]
